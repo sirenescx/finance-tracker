@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="manual-page">
+  <div class="page-heading"><div><h1>Add transaction</h1><p>Record an income or expense directly in your ledger.</p></div><span class="page-badge">Manual entry</span></div>
+  <form action="/transactions/new" method="post" class="panel manual-transaction-form">
+    <div class="manual-form-intro"><span class="manual-form-icon" aria-hidden="true">＋</span><div><strong>Transaction details</strong><span>All amounts are recorded in euros.</span></div></div>
+    <label>Date<input type="date" name="posted_date" value="{{ today }}" required></label>
+    <label class="manual-description">Description<input type="text" name="description" maxlength="250" required placeholder="Merchant or income description"></label>
+    <label>Amount<input type="number" name="amount" min="0.01" step="0.01" required placeholder="0.00"></label>
+    <label>Type<select name="kind" id="manual-kind"><option value="expense">Expense</option><option value="income">Income</option></select></label>
+    <label>Category<select name="category" id="manual-category" required></select></label>
+    <label><span>Account <span class="optional-label">(optional)</span></span><input type="text" name="account" maxlength="100" placeholder="Manual"></label>
+    <button type="submit" class="manual-submit">Add transaction</button>
+  </form>
+</div>
+<script>
+  const categoryOptions = {
+    expense: {{ expense_categories|tojson }},
+    income: {{ income_categories|tojson }}
+  };
+  const kindSelect = document.getElementById('manual-kind');
+  const categorySelect = document.getElementById('manual-category');
+  function updateCategories() {
+    categorySelect.replaceChildren(...categoryOptions[kindSelect.value].map((category) => new Option(category, category)));
+  }
+  kindSelect.addEventListener('change', updateCategories);
+  updateCategories();
+</script>
+{% endblock %}

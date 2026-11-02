@@ -35,14 +35,22 @@ def _parse_revolut(rows: list[dict[str, str]]) -> list[ParsedTransaction]:
         if row.get("State", "COMPLETED").strip().upper() != "COMPLETED":
             continue
         completed = row["Completed Date"].strip()
-        parsed_date = datetime.fromisoformat(completed).date()
+        started = row.get("Started Date", "").strip()
+        transaction_date = started or completed
+        parsed_date = datetime.fromisoformat(transaction_date).date()
         description = row["Description"].strip()
+        signed_amount = parse_euro(row["Amount"])
+        fee = parse_euro(row.get("Fee", "0") or "0")
+        if signed_amount == 0 and fee != 0 and row.get("Type", "").strip().lower() == "charge":
+            signed_amount = -abs(fee)
         result.append(ParsedTransaction(
             source="Revolut", account=f"Revolut {row.get('Product', 'Current').strip()}",
             posted_date=parsed_date, description=description,
             original_description=" | ".join(x for x in [row.get("Type", ""), description] if x),
-            signed_amount=parse_euro(row["Amount"]), raw_row=line,
-            raw_reference="|".join([row.get("Type", ""), row.get("Started Date", ""), completed]),
+            signed_amount=signed_amount, raw_row=line,
+            raw_reference="|".join([row.get("Type", ""), started, completed]),
+            currency=row.get("Currency", "EUR").strip().upper(),
+            original_amount=f"{abs(signed_amount):.2f}",
         ))
     return result
 

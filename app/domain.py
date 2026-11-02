@@ -14,6 +14,10 @@ class UnsupportedStatement(ValueError):
     pass
 
 
+class MissingExchangeRate(UnsupportedStatement):
+    pass
+
+
 def normalise_text(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", (value or "").lower()).strip()
 
@@ -37,6 +41,9 @@ class ParsedTransaction:
     signed_amount: Decimal
     raw_row: int
     raw_reference: str = ""
+    currency: str = "EUR"
+    exchange_rate: str = "1"
+    original_amount: str = ""
 
 
 @dataclass
@@ -56,10 +63,16 @@ class Transaction:
     needs_review: str
     raw_source: str
     raw_row: str
+    original_amount: str = ""
+    currency: str = "EUR"
+    exchange_rate: str = "1"
 
     @classmethod
     def from_row(cls, row: dict[str, str]) -> "Transaction":
-        return cls(**{field: row.get(field, "") for field in cls.__dataclass_fields__})
+        values = {field: row.get(field, "") for field in cls.__dataclass_fields__}
+        values["currency"] = values["currency"] or "EUR"
+        values["exchange_rate"] = values["exchange_rate"] or "1"
+        return cls(**values)
 
     def as_row(self) -> dict[str, str]:
         return asdict(self)
@@ -76,7 +89,8 @@ class Transaction:
 def fingerprint_for(parsed: ParsedTransaction) -> str:
     source_key = "|".join([
         parsed.source, parsed.account, parsed.posted_date.isoformat(),
-        f"{abs(parsed.signed_amount):.2f}", normalise_text(parsed.original_description),
+        parsed.currency.upper(), parsed.original_amount or f"{abs(parsed.signed_amount):.2f}",
+        normalise_text(parsed.original_description),
         normalise_text(parsed.raw_reference),
     ])
     return sha256(source_key.encode()).hexdigest()
@@ -100,6 +114,8 @@ def transaction_from_parsed(
         category=category, classification_source=classification_source,
         needs_review=str(needs_review).lower(), raw_source=raw_source,
         raw_row=str(parsed.raw_row),
+        original_amount=parsed.original_amount or f"{abs(parsed.signed_amount):.2f}",
+        currency=parsed.currency, exchange_rate=parsed.exchange_rate,
     )
 
 

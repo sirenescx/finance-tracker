@@ -73,5 +73,6 @@ def test_transfer_excluded_and_seed_workbook(tmp_path: Path) -> None:
     income = workbook.create_sheet("Income"); income.append(["Timestamp", "Date", "Income Source", "Description/Invoice No.", "Income Amount"]); income.append([None, date(2026, 1, 4), "Salary", "Legacy Employer", 1000])
     path = tmp_path / "seed.xlsx"; workbook.save(path)
     seeded = seed_workbook(store, path)
-    assert seeded["imported"] == 2 and seeded["rules"] >= 1
+    assert seeded["imported"] == 2 and seeded["rules"] == 0
+    assert store.merchant_rules() == {}
 

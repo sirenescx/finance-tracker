@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="title-row"><div><h1>{{ report.year }} overview</h1><p>Transactions marked as transfers are excluded from all totals.</p></div>
-  <form><label>Year <input name="year" type="number" value="{{ report.year }}"></label><button>Show</button></form></div>
+  <form method="get" class="year-picker" aria-label="Choose dashboard year">
+    <label for="dashboard-year"><span>REPORTING YEAR</span><select id="dashboard-year" name="year" aria-label="Reporting year">{% for year in years %}<option value="{{ year }}" {{ 'selected' if year == report.year else '' }}>{{ year }}</option>{% endfor %}</select></label>
+    <button type="submit">View</button>
+  </form></div>
 {% if report.pending %}<a class="review-alert" href="/review">{{ report.pending }} transaction{{ '' if report.pending == 1 else 's' }} needs review</a>{% endif %}
 <section class="cards">
   <article><span>Total income</span><strong>{{ report.data.totals.income|sum|money }}</strong></article>
@@ -9,21 +12,22 @@
   <article><span>Gross savings</span><strong>{{ report.data.totals.savings|sum|money }}</strong></article>
   <article><span>Essential spend</span><strong>{{ report.data.totals.essential|sum|money }}</strong></article>
 </section>
-<section class="charts"><article><h2>Monthly expenses</h2><canvas id="expenses"></canvas></article><article><h2>Expense categories</h2><canvas id="expense-donut"></canvas></article><article><h2>Monthly income</h2><canvas id="income"></canvas></article><article><h2>Income categories</h2><canvas id="income-donut"></canvas></article></section>
+<section class="charts"><article><h2>Monthly expenses</h2><canvas id="expenses"></canvas></article><article><h2>Expense categories</h2><canvas id="expense-donut"></canvas></article><article><h2>Monthly spend by bank</h2><canvas id="bank-spend"></canvas></article><article><h2>Monthly income</h2><canvas id="income"></canvas></article><article><h2>Income categories</h2><canvas id="income-donut"></canvas></article></section>
 <h2>Monthly summary</h2>
 <div class="table-wrap"><table><thead><tr><th>Month</th><th>Total spend</th><th>Essential</th><th>Income</th><th>Gross savings</th>{% for category in expense_categories %}<th>{{ category }}</th>{% endfor %}</tr></thead><tbody>
-{% for i in range(12) %}<tr><th>{{ report.chart_data.labels[i] }}</th><td>{{ report.data.totals.expenses[i]|money }}</td><td>{{ report.data.totals.essential[i]|money }}</td><td>{{ report.data.totals.income[i]|money }}</td><td>{{ report.data.totals.savings[i]|money }}</td>{% for category in expense_categories %}<td>{{ report.data.expense[category][i]|money }}</td>{% endfor %}</tr>{% endfor %}
+{% for i in range(12) %}<tr><th>{{ report.chart_data.labels[i] }}</th><td>{{ report.data.totals.expenses[i]|money }}</td><td>{{ report.data.totals.essential[i]|money }}</td><td>{{ report.data.totals.income[i]|money }}</td><td>{{ report.data.totals.savings[i]|money }}</td>{% for category in expense_categories %}<td class="category-cell {{ category|category_class }}">{{ report.data.expense[category][i]|money }}</td>{% endfor %}</tr>{% endfor %}
 </tbody></table></div>
 <h2>Budget comparison</h2>
 <div class="table-wrap"><table><thead><tr><th>Category</th><th>Annual actual</th><th>Annual budget</th><th>Variance</th></tr></thead><tbody>
-{% for category in expense_categories %}<tr><th>{{ category }}</th><td>{{ report.data.expense[category]|sum|money }}</td><td>{{ (report.data.budget.expense[category] * 12)|money }}</td><td>{{ ((report.data.budget.expense[category] * 12) - (report.data.expense[category]|sum))|money }}</td></tr>{% endfor %}
-{% for category in income_categories %}<tr><th>Income: {{ category }}</th><td>{{ report.data.income[category]|sum|money }}</td><td>{{ (report.data.budget.income[category] * 12)|money }}</td><td>{{ ((report.data.income[category]|sum) - (report.data.budget.income[category] * 12))|money }}</td></tr>{% endfor %}
+{% for category in expense_categories %}{% set variance = (report.data.budget.expense[category] * 12) - (report.data.expense[category]|sum) %}<tr><th><span class="category-tag {{ category|category_class }}">{{ category }}</span></th><td>{{ report.data.expense[category]|sum|money }}</td><td>{{ (report.data.budget.expense[category] * 12)|money }}</td><td><span class="variance-value {{ 'variance-positive' if variance > 0 else 'variance-negative' if variance < 0 else 'variance-zero' }}"><span aria-hidden="true">{{ '↑' if variance > 0 else '↓' if variance < 0 else '→' }}</span> {{ variance|money }}</span></td></tr>{% endfor %}
 </tbody></table></div>
 <script>
 window.addEventListener('DOMContentLoaded', () => {
-  const d = {{ chart_json|safe }}; const colors = ['#5b5bd6','#e88973','#4db6ac','#e6b84f','#7b8aee','#d889c2','#6b7280','#68b984','#ed7d31','#5b9bd5','#a78bfa','#ef9a9a','#89b4a7','#c0a070'];
-  const stacked = (id, values) => new Chart(document.getElementById(id), {type:'bar', data:{labels:d.labels,datasets:Object.entries(values).map(([label,data],i)=>({label,data,backgroundColor:colors[i%colors.length]}))}, options:{responsive:true,scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>'€'+v}}}}});
-  const donut = (id, values) => new Chart(document.getElementById(id), {type:'doughnut',data:{labels:Object.keys(values),datasets:[{data:Object.values(values),backgroundColor:colors}]},options:{plugins:{legend:{position:'bottom'}}}});
+  const d = {{ chart_json|safe }}; const categoryColors = {'Bills':'#7D83BD','Subscriptions':'#D98FA0','Entertainment':'#E2A276','Food & Drink':'#D5B45C','Groceries':'#79A58A','Health & Wellbeing':'#65A6A1','Other':'#77A8C1','Shopping':'#9B86B5','Transport':'#C77FA0','Travel':'#A3A16B','Rent':'#D47D6C','Gifts':'#7D8B9B','Beauty':'#6BA78C','Taxes':'#B59A78','Salary':'#558F83','Bonus':'#C2748C','Stocks':'#7189B5'};
+  const stacked = (id, values) => new Chart(document.getElementById(id), {type:'bar', data:{labels:d.labels,datasets:Object.entries(values).map(([label,data])=>({label,data,backgroundColor:categoryColors[label]||'#9AA3AF',borderRadius:0,borderSkipped:false}))}, options:{responsive:true,scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'#edf0f6'},ticks:{callback:v=>'€'+v}}}}});
+  const donut = (id, values) => new Chart(document.getElementById(id), {type:'doughnut',data:{labels:Object.keys(values),datasets:[{data:Object.values(values),backgroundColor:Object.keys(values).map(label=>categoryColors[label]||'#9AA3AF'),borderColor:'#fff',borderWidth:3,hoverOffset:5}]},options:{plugins:{legend:{position:'bottom'}}}});
+  const bankColors = {ING:'#D79A68',Revolut:'#7D83BD'};
+  new Chart(document.getElementById('bank-spend'), {type:'bar',data:{labels:d.labels,datasets:Object.entries(d.bankSpend).map(([label,data])=>({label,data,backgroundColor:bankColors[label]}))},options:{responsive:true,scales:{y:{beginAtZero:true,ticks:{callback:v=>'€'+v}}}}});
   stacked('expenses', d.expense); donut('expense-donut', d.expenseTotals); stacked('income', d.income); donut('income-donut', d.incomeTotals);
 });
 </script>

@@ -21,16 +21,32 @@ class DataStore:
         self.rules_path = self.root / "merchant_rules.json"
         self.budgets_path = self.root / "budgets.json"
         self.transfers_path = self.root / "transfer_rules.json"
+        self.fx_rates_path = self.root / "fx_rates.json"
 
     def initialise(self) -> None:
         self.uploads.mkdir(parents=True, exist_ok=True)
         if not self.ledger_path.exists():
             with self.ledger_path.open("w", newline="", encoding="utf-8") as stream:
                 csv.DictWriter(stream, fieldnames=LEDGER_FIELDS).writeheader()
+        else:
+            with self.ledger_path.open(newline="", encoding="utf-8") as stream:
+                reader = csv.DictReader(stream)
+                if reader.fieldnames != LEDGER_FIELDS:
+                    rows = list(reader)
+                    with self.ledger_path.open("w", newline="", encoding="utf-8") as migrated:
+                        writer = csv.DictWriter(migrated, fieldnames=LEDGER_FIELDS)
+                        writer.writeheader()
+                        for row in rows:
+                            migrated_row = {field: row.get(field, "") for field in LEDGER_FIELDS}
+                            migrated_row["currency"] = migrated_row["currency"] or "EUR"
+                            migrated_row["exchange_rate"] = migrated_row["exchange_rate"] or "1"
+                            migrated_row["original_amount"] = migrated_row["original_amount"] or migrated_row.get("amount", "")
+                            writer.writerow(migrated_row)
         self._ensure_json(self.imports_path, [])
         self._ensure_json(self.rules_path, {})
         self._ensure_json(self.budgets_path, {})
         self._ensure_json(self.transfers_path, DEFAULT_TRANSFER_RULES)
+        self._ensure_json(self.fx_rates_path, {})
 
     def _ensure_json(self, path: Path, default: object) -> None:
         if not path.exists():
@@ -84,6 +100,30 @@ class DataStore:
 
     def save_transfer_rules(self, rules: list[str]) -> None:
         self._write_json(self.transfers_path, rules)
+
+    def fx_rates(self) -> dict[str, dict[str, str]]:
+        return self._read_json(self.fx_rates_path, {})  # type: ignore[return-value]
+
+    def fx_rate(self, currency: str, day: str) -> str | None:
+        if currency.upper() == "EUR":
+            return "1"
+        return self.fx_rates().get(day, {}).get(currency.upper())
+
+    def save_fx_rate(self, day: str, currency: str, eur_per_unit: str) -> None:
+        rates = self.fx_rates()
+        rates.setdefault(day, {})[currency.upper()] = eur_per_unit
+        self._write_json(self.fx_rates_path, rates)
+
+    def delete_fx_rate(self, day: str, currency: str) -> bool:
+        rates = self.fx_rates()
+        day_rates = rates.get(day)
+        if not day_rates or currency.upper() not in day_rates:
+            return False
+        del day_rates[currency.upper()]
+        if not day_rates:
+            del rates[day]
+        self._write_json(self.fx_rates_path, rates)
+        return True
 
     def imports(self) -> list[dict[str, object]]:
         return self._read_json(self.imports_path, [])  # type: ignore[return-value]

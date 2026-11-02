@@ -1,7 +1,19 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Import statement</h1><p>Upload a UTF-8 CSV exported from ING or Revolut. Originals are retained locally and duplicate transactions are skipped.</p>
-<form class="panel" action="/import" method="post" enctype="multipart/form-data"><input type="file" name="file" accept=".csv,text/csv" required><button>Import CSV</button></form>
-<h2>Import history</h2><div class="table-wrap"><table><thead><tr><th>File</th><th>Imported</th><th>Skipped</th><th>Transfers</th><th>Review</th><th>Time</th></tr></thead><tbody>{% for item in imports|reverse %}<tr><td>{{ item.filename }}</td><td>{{ item.imported }}</td><td>{{ item.skipped }}</td><td>{{ item.transfers }}</td><td>{{ item.review }}</td><td>{{ item.imported_at }}</td></tr>{% else %}<tr><td colspan="6">No statements imported yet.</td></tr>{% endfor %}</tbody></table></div>
+<div class="import-page">
+  <div class="page-heading">
+    <div><h1>Import statements</h1><p>Upload a UTF-8 CSV exported from ING or Revolut. Originals are stored locally and duplicate transactions are skipped.</p></div>
+    <span class="page-badge">ING · Revolut CSV</span>
+  </div>
+  <form class="panel import-upload" action="/import" method="post" enctype="multipart/form-data">
+    <div class="upload-intro"><span class="upload-icon" aria-hidden="true">↑</span><div><h2>Choose a statement</h2><p>Select your bank’s CSV export to add transactions to your ledger.</p></div></div>
+    <label class="csv-file-picker"><span>CSV file</span><input type="file" name="file" accept=".csv,text/csv" required></label>
+    <button type="submit">Import CSV</button>
+    <p class="upload-note">Supported formats: ING and Revolut CSV statements · up to 10 MB</p>
+  </form>
+  <section class="import-history">
+    <div class="section-heading"><div><h2>Import history</h2><p>Recent statement files and the transactions processed from each one.</p></div><span class="history-count">{{ imports|length }} file{{ '' if imports|length == 1 else 's' }}</span></div>
+    <div class="table-wrap"><table class="import-history-table"><thead><tr><th>File</th><th>Imported</th><th>Updated</th><th>Skipped</th><th>Transfers</th><th>Review</th><th>Time</th></tr></thead><tbody>{% for item in imports|reverse %}<tr><td class="import-filename">{{ item.filename }}</td><td>{{ item.imported }}</td><td>{{ item.updated|default(0) }}</td><td>{{ item.skipped }}</td><td>{{ item.transfers }}</td><td>{{ item.review }}</td><td>{{ item.imported_at }}</td></tr>{% else %}<tr><td colspan="7">No statements imported yet.</td></tr>{% endfor %}</tbody></table></div>
+  </section>
+</div>
 {% endblock %}
-

@@ -12,6 +12,7 @@ LEDGER_FIELDS = [
     "id", "fingerprint", "source", "account", "posted_date", "description",
     "original_description", "amount", "direction", "kind", "category",
     "classification_source", "needs_review", "raw_source", "raw_row",
+    "original_amount", "currency", "exchange_rate",
 ]
-DEFAULT_TRANSFER_RULES = ["oranje spaarrekening", "mariia manakhova", "savings transfer", "top up", "topup"]
+DEFAULT_TRANSFER_RULES = ["oranje spaarrekening", "mariia manakhova", "savings transfer", "mw m manakhova"]
 

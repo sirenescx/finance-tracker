@@ -1,6 +1,23 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>{{ 'All transactions' if show_all else 'Review transactions' }}</h1><p>New descriptions are placed in Other until you confirm their category. Saving a rule applies the decision to matching future descriptions. <a href="{{ '/review' if show_all else '/review?show_all=true' }}">{{ 'Show only items needing review' if show_all else 'Edit any imported transaction' }}</a>.</p>
-{% for item in transactions %}<article class="review-row"><div><strong>{{ item.description }}</strong><span>{{ item.posted_date }} · {{ item.source }} · {{ item.amount|money }}</span></div><form action="/review/{{ item.id }}" method="post"><select name="kind" class="kind-select">{% for kind in ['expense','income'] %}<option value="{{ kind }}" {{ 'selected' if kind == item.kind else '' }}>{{ kind|title }}</option>{% endfor %}</select><select name="category"><optgroup label="Expense">{% for category in expense_categories %}<option value="{{ category }}" {{ 'selected' if category == item.category else '' }}>{{ category }}</option>{% endfor %}</optgroup><optgroup label="Income">{% for category in income_categories if category != 'Other' %}<option value="{{ category }}" {{ 'selected' if category == item.category else '' }}>{{ category }}</option>{% endfor %}</optgroup></select><label><input type="checkbox" name="save_rule" value="true" checked> Learn</label><button>Save</button></form><form action="/review/{{ item.id }}/transfer" method="post"><label><input type="checkbox" name="save_rule" value="true"> Learn transfer</label><button class="quiet">Transfer</button></form></article>{% else %}<p class="empty">Nothing needs review.</p>{% endfor %}
+<div class="review-page">
+  <div class="page-heading">
+    <div><h1>{{ 'All transactions' if show_all else 'Review transactions' }}</h1><p>Confirm a category for each transaction. Saving a rule also classifies matching future descriptions.</p></div>
+    <span class="review-count">{{ transactions|length }} transaction{{ '' if transactions|length == 1 else 's' }}</span>
+  </div>
+  <a class="review-mode-link" href="{{ '/review' if show_all else '/review?show_all=true' }}">{{ 'Show only transactions needing review' if show_all else 'Edit any imported transaction' }}<span aria-hidden="true">→</span></a>
+  <div class="review-list">
+    {% for item in transactions %}
+    <article class="review-row">
+      <div class="review-item-details"><strong>{{ item.description }}</strong><span>{{ item.posted_date }}<i>·</i>{{ item.source }}<i>·</i>{{ item.amount|money }}</span></div>
+      <form action="/review/{{ item.id }}" method="post" class="review-category-form">
+        <label class="visually-hidden" for="kind-{{ item.id }}">Transaction type</label><select id="kind-{{ item.id }}" name="kind" class="kind-select" aria-label="Type for {{ item.description }}">{% for kind in ['expense','income'] %}<option value="{{ kind }}" {{ 'selected' if kind == item.kind else '' }}>{{ kind|title }}</option>{% endfor %}</select>
+        <label class="visually-hidden" for="category-{{ item.id }}">Transaction category</label><select id="category-{{ item.id }}" name="category" aria-label="Category for {{ item.description }}"><optgroup label="Expense">{% for category in expense_categories %}<option value="{{ category }}" {{ 'selected' if category == item.category else '' }}>{{ category }}</option>{% endfor %}</optgroup><optgroup label="Income">{% for category in income_categories if category != 'Other' %}<option value="{{ category }}" {{ 'selected' if category == item.category else '' }}>{{ category }}</option>{% endfor %}</optgroup></select>
+        <label class="review-learn"><input type="checkbox" name="save_rule" value="true" checked> Learn</label><button>Save</button>
+      </form>
+      <form action="/review/{{ item.id }}/transfer" method="post" class="review-transfer-form"><label class="review-learn"><input type="checkbox" name="save_rule" value="true"> Learn transfer</label><button class="quiet">Transfer</button></form>
+    </article>
+    {% else %}<p class="empty review-empty">Nothing needs review. New uncategorized transactions will appear here.</p>{% endfor %}
+  </div>
+</div>
 {% endblock %}
-

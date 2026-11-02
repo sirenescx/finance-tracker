@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="transactions-page">
+<div class="title-row transactions-heading">
+  <div><h1>All transactions</h1><p><span class="transactions-count">{{ transactions|length }}</span> transactions in {{ selected_year }}</p></div>
+  <div class="transaction-page-actions"><form method="get" class="year-filter"><label for="year">Year</label><select id="year" name="year" onchange="this.form.submit()">{% for year in years %}<option value="{{ year }}" {{ 'selected' if year == selected_year else '' }}>{{ year }}</option>{% endfor %}</select></form><a class="add-transaction-button" href="/transactions/new">+ Add transaction</a></div>
+</div>
+<div class="table-wrap transactions-table-card"><table class="transactions-table" id="transactions-table">
+  <thead><tr>
+    <th><button class="transaction-sort" data-column="0" data-type="text">Date <span>↕</span></button></th>
+    <th><button class="transaction-sort" data-column="1" data-type="text">Description <span>↕</span></button></th>
+    <th><button class="transaction-sort" data-column="2" data-type="text">Account <span>↕</span></button></th>
+    <th><button class="transaction-sort" data-column="3" data-type="number">Amount <span>↕</span></button></th>
+    <th><button class="transaction-sort" data-column="4" data-type="text">Type <span>↕</span></button></th>
+    <th><button class="transaction-sort" data-column="5" data-type="text">Category <span>↕</span></button></th>
+    <th><button class="transaction-sort" data-column="6" data-type="text">Status <span>↕</span></button></th><th></th>
+  </tr></thead>
+  <tbody>{% for item in transactions %}
+    <tr>
+      <td>{{ item.posted_date }}</td><td>{{ item.description }}</td><td>{{ item.source }} · {{ item.account }}</td>
+      <td data-sort-value="{{ (item.amount|float) * (-1 if item.direction == 'expense' else 1 if item.direction == 'income' else 0) }}">
+        {% if item.currency != 'EUR' and item.exchange_rate == '—' %}
+          {{ item.currency }} {{ item.original_amount }}
+        {% else %}
+          {{ ('-' if item.direction == 'expense' else '+' if item.direction == 'income' else '') }}{{ item.amount|money }}
+          {% if item.currency != 'EUR' %}<small class="hint transaction-fx">({{ item.currency }} {{ item.original_amount }} × {{ item.exchange_rate }})</small>{% endif %}
+        {% endif %}
+      </td>
+      <td>{{ item.kind|title }}</td>
+      <td>{% if item.kind == 'transfer' %}<span class="category-tag category-transfer">Transfer</span>{% elif item.kind == 'exchange' %}<span class="category-tag category-exchange">Currency exchange</span>{% else %}
+        <form action="/transactions/{{ item.id }}/category" method="post" class="inline-category"><input type="hidden" name="kind" value="{{ item.kind }}"><input type="hidden" name="year" value="{{ selected_year }}"><select name="category" aria-label="Category for {{ item.description }}" onchange="this.form.requestSubmit()">{% set categories = income_categories if item.kind == 'income' else expense_categories %}{% for category in categories %}<option value="{{ category }}" {{ 'selected' if category == item.category else '' }}>{{ category }}</option>{% endfor %}</select></form>
+      {% endif %}</td>
+      <td><span class="transaction-status {{ 'status-review' if item.is_reviewable else 'status-' + (item.classification_source|replace('_', '-')) }}">{{ 'Needs review' if item.is_reviewable else item.classification_source|replace('_', ' ')|title }}</span></td>
+      <td><form action="/transactions/{{ item.id }}/delete" method="post" onsubmit="return confirm('Delete this transaction from the ledger?')"><input type="hidden" name="year" value="{{ selected_year }}"><button type="submit" class="delete-button" aria-label="Delete {{ item.description }}" title="Delete transaction"><span class="delete-cross" aria-hidden="true"></span></button></form></td>
+    </tr>
+  {% else %}<tr><td colspan="8">No transactions for this year.</td></tr>{% endfor %}</tbody>
+</table></div>
+</div>
+<script>
+  document.querySelectorAll('.transaction-sort').forEach((button) => {
+    button.addEventListener('click', () => {
+      const table = document.getElementById('transactions-table');
+      const column = Number(button.dataset.column);
+      const direction = button.dataset.direction === 'asc' ? 'desc' : 'asc';
+      const sign = direction === 'asc' ? 1 : -1;
+      const rows = Array.from(table.tBodies[0].rows).filter((row) => row.cells.length > 1);
+      rows.sort((left, right) => {
+        const leftCell = left.cells[column];
+        const rightCell = right.cells[column];
+        const leftValue = column === 5 ? (leftCell.querySelector('select')?.value || leftCell.innerText) : (leftCell.dataset.sortValue || leftCell.innerText);
+        const rightValue = column === 5 ? (rightCell.querySelector('select')?.value || rightCell.innerText) : (rightCell.dataset.sortValue || rightCell.innerText);
+        if (button.dataset.type === 'number') return (Number(leftValue) - Number(rightValue)) * sign;
+        return leftValue.localeCompare(rightValue, undefined, { sensitivity: 'base', numeric: true }) * sign;
+      });
+      rows.forEach((row) => table.tBodies[0].appendChild(row));
+      document.querySelectorAll('.transaction-sort').forEach((item) => { item.dataset.direction = ''; item.querySelector('span').textContent = '↕'; });
+      button.dataset.direction = direction;
+      button.querySelector('span').textContent = direction === 'asc' ? '↑' : '↓';
+    });
+  });
+</script>
+{% endblock %}
