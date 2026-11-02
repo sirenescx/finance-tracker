@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Finance Tracker</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='app.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+</head>
+<body>
+  <header><a class="brand" href="/">Finance Tracker</a><nav>
+    <a href="/">Dashboard</a><a href="/import">Import</a><a href="/review">Review</a><a href="/budgets">Budgets</a><a href="/settings">Settings</a>
+  </nav></header>
+  <main>{% if message %}<p class="notice">{{ message }}</p>{% endif %}{% block content %}{% endblock %}</main>
+</body>
+</html>
+

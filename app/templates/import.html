@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Import statement</h1><p>Upload a UTF-8 CSV exported from ING or Revolut. Originals are retained locally and duplicate transactions are skipped.</p>
+<form class="panel" action="/import" method="post" enctype="multipart/form-data"><input type="file" name="file" accept=".csv,text/csv" required><button>Import CSV</button></form>
+<h2>Import history</h2><div class="table-wrap"><table><thead><tr><th>File</th><th>Imported</th><th>Skipped</th><th>Transfers</th><th>Review</th><th>Time</th></tr></thead><tbody>{% for item in imports|reverse %}<tr><td>{{ item.filename }}</td><td>{{ item.imported }}</td><td>{{ item.skipped }}</td><td>{{ item.transfers }}</td><td>{{ item.review }}</td><td>{{ item.imported_at }}</td></tr>{% else %}<tr><td colspan="6">No statements imported yet.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}
+

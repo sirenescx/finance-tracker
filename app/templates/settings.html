@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Settings</h1><form action="/settings/transfers" method="post" class="panel"><h2>Transfer descriptions</h2><p>One case-insensitive phrase per line. Matching rows stay in history but are excluded from reports.</p><textarea name="transfer_rules" rows="9">{{ transfer_rules }}</textarea><button>Save transfer rules</button></form><form action="/settings/rules" method="post" class="panel"><h2>Add merchant rule</h2><label>Pattern <input name="pattern" placeholder="^Payment from .*$" required></label><label>Match type <select name="match_type"><option value="contains">Contains text</option><option value="regex">Regular expression</option></select></label><label>Type <select name="kind"><option value="expense">Expense</option><option value="income">Income</option></select></label><label>Category <select name="category"><optgroup label="Expenses">{% for category in expense_categories %}<option value="{{ category }}">{{ category }}</option>{% endfor %}</optgroup><optgroup label="Income">{% for category in income_categories if category != 'Other' %}<option value="{{ category }}">{{ category }}</option>{% endfor %}</optgroup></select></label><p class="hint">For example, use <code>^Payment from .*$</code> to match any incoming payment description beginning with “Payment from”.</p><button>Save merchant rule</button></form><h2>Learned merchant rules</h2><p class="hint">Select a column heading to sort. Select it again to reverse the order.</p><div class="table-wrap"><table id="merchant-rules"><thead><tr><th><button class="sort-button" data-column="0">Pattern <span>↕</span></button></th><th><button class="sort-button" data-column="1">Match <span>↕</span></button></th><th><button class="sort-button" data-column="2">Type <span>↕</span></button></th><th><button class="sort-button" data-column="3">Category <span>↕</span></button></th></tr></thead><tbody>{% for merchant, rule in merchant_rules.items()|sort %}<tr><td><code>{{ merchant }}</code></td><td>{{ rule.get('match_type', 'contains') }}</td><td>{{ rule.kind }}</td><td><span class="category-tag {{ rule.category|category_class }}">{{ rule.category }}</span></td></tr>{% else %}<tr><td colspan="4">No learned rules yet.</td></tr>{% endfor %}</tbody></table></div>
+<script>
+  document.querySelectorAll('.sort-button').forEach((button) => {
+    button.addEventListener('click', () => {
+      const table = document.getElementById('merchant-rules');
+      const column = Number(button.dataset.column);
+      const direction = button.dataset.direction === 'asc' ? 'desc' : 'asc';
+      const rows = Array.from(table.tBodies[0].rows).filter((row) => row.cells.length > 1);
+      rows.sort((left, right) => left.cells[column].innerText.localeCompare(right.cells[column].innerText, undefined, { sensitivity: 'base' }) * (direction === 'asc' ? 1 : -1));
+      rows.forEach((row) => table.tBodies[0].appendChild(row));
+      document.querySelectorAll('.sort-button').forEach((item) => { item.dataset.direction = ''; item.querySelector('span').textContent = '↕'; });
+      button.dataset.direction = direction;
+      button.querySelector('span').textContent = direction === 'asc' ? '↑' : '↓';
+    });
+  });
+</script>
+{% endblock %}
+

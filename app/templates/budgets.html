@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Monthly budgets</h1><p>Leave a value empty when there is no budget for that category.</p><form method="post" class="budget-grid"><section><h2>Expenses</h2>{% for category in expense_categories %}<label>{{ category }}<input type="number" min="0" step="0.01" name="budget_expense_{{ category }}" value="{{ budgets.get('expense', {}).get(category, '') }}"></label>{% endfor %}</section><section><h2>Income</h2>{% for category in income_categories %}<label>{{ category }}<input type="number" min="0" step="0.01" name="budget_income_{{ category }}" value="{{ budgets.get('income', {}).get(category, '') }}"></label>{% endfor %}</section><button>Save budgets</button></form>
+{% endblock %}
+
