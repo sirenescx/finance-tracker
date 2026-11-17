@@ -44,6 +44,7 @@ class ParsedTransaction:
     currency: str = "EUR"
     exchange_rate: str = "1"
     original_amount: str = ""
+    bank_category: str = ""
 
 
 @dataclass

@@ -26,7 +26,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const d = {{ chart_json|safe }}; const categoryColors = {'Bills':'#7D83BD','Subscriptions':'#D98FA0','Entertainment':'#E2A276','Food & Drink':'#D5B45C','Groceries':'#79A58A','Health & Wellbeing':'#65A6A1','Other':'#77A8C1','Shopping':'#9B86B5','Transport':'#C77FA0','Travel':'#A3A16B','Rent':'#D47D6C','Gifts':'#7D8B9B','Beauty':'#6BA78C','Taxes':'#B59A78','Salary':'#558F83','Bonus':'#C2748C','Stocks':'#7189B5'};
   const stacked = (id, values) => new Chart(document.getElementById(id), {type:'bar', data:{labels:d.labels,datasets:Object.entries(values).map(([label,data])=>({label,data,backgroundColor:categoryColors[label]||'#9AA3AF',borderRadius:0,borderSkipped:false}))}, options:{responsive:true,scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'#edf0f6'},ticks:{callback:v=>'€'+v}}}}});
   const donut = (id, values) => new Chart(document.getElementById(id), {type:'doughnut',data:{labels:Object.keys(values),datasets:[{data:Object.values(values),backgroundColor:Object.keys(values).map(label=>categoryColors[label]||'#9AA3AF'),borderColor:'#fff',borderWidth:3,hoverOffset:5}]},options:{plugins:{legend:{position:'bottom'}}}});
-  const bankColors = {ING:'#D79A68',Revolut:'#7D83BD'};
+  const bankColors = {ING:'#D79A68',Revolut:'#7D83BD',Yonder:'#65A6A1'};
   new Chart(document.getElementById('bank-spend'), {type:'bar',data:{labels:d.labels,datasets:Object.entries(d.bankSpend).map(([label,data])=>({label,data,backgroundColor:bankColors[label]}))},options:{responsive:true,scales:{y:{beginAtZero:true,ticks:{callback:v=>'€'+v}}}}});
   stacked('expenses', d.expense); donut('expense-donut', d.expenseTotals); stacked('income', d.income); donut('income-donut', d.incomeTotals);
 });

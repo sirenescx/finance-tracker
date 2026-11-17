@@ -2,14 +2,14 @@
 {% block content %}
 <div class="import-page">
   <div class="page-heading">
-    <div><h1>Import statements</h1><p>Upload a UTF-8 CSV exported from ING or Revolut. Originals are stored locally and duplicate transactions are skipped.</p></div>
-    <span class="page-badge">ING · Revolut CSV</span>
+    <div><h1>Import statements</h1><p>Upload a UTF-8 CSV exported from ING, Revolut, or Yonder. Originals are stored locally and duplicate transactions are skipped.</p></div>
+    <span class="page-badge">ING · Revolut · Yonder CSV</span>
   </div>
   <form class="panel import-upload" action="/import" method="post" enctype="multipart/form-data">
     <div class="upload-intro"><span class="upload-icon" aria-hidden="true">↑</span><div><h2>Choose a statement</h2><p>Select your bank’s CSV export to add transactions to your ledger.</p></div></div>
     <label class="csv-file-picker"><span>CSV file</span><input type="file" name="file" accept=".csv,text/csv" required></label>
     <button type="submit">Import CSV</button>
-    <p class="upload-note">Supported formats: ING and Revolut CSV statements · up to 10 MB</p>
+    <p class="upload-note">Supported formats: ING, Revolut, and Yonder CSV statements · up to 10 MB</p>
   </form>
   <section class="import-history">
     <div class="section-heading"><div><h2>Import history</h2><p>Recent statement files and the transactions processed from each one.</p></div><span class="history-count">{{ imports|length }} file{{ '' if imports|length == 1 else 's' }}</span></div>

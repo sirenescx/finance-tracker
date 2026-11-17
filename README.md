@@ -1,12 +1,12 @@
 # Finance Tracker
 
-A local FastAPI app for importing ING and Revolut statement CSVs, automatically
+A local FastAPI app for importing ING, Revolut, and Yonder statement CSVs, automatically
 categorising transactions, and viewing monthly spending and income.
 
 ## What it does
 
 Finance Tracker turns monthly bank CSV exports into one searchable transaction
-ledger. It recognizes ING and Revolut formats, skips duplicate rows, applies
+ledger. It recognizes ING, Revolut, and Yonder formats, skips duplicate rows, applies
 merchant and transfer rules, and sends uncategorized transactions to a review
 queue. You can correct categories, add transactions manually, and update or
 delete transactions from the ledger.
@@ -27,7 +27,7 @@ Git-ignored `data/` directory.
   bank spending, savings, essential spending, and budget comparisons.
 - **Transactions** — a searchable year view of the full ledger with sortable
   columns, category edits, and transaction deletion.
-- **Import** — upload ING or Revolut CSV files and review import history,
+- **Import** — upload ING, Revolut, or Yonder CSV files and review import history,
   including imported, skipped, transfer, and review counts.
 - **Review** — categorize transactions that need attention and optionally
   save a merchant rule for future imports.
@@ -89,7 +89,7 @@ merchant rules are learned from future review corrections.
 
 ## Import behavior
 
-- Supports the ING and Revolut CSV headers supplied in `Statements/`.
+- Supports ING, Revolut, and Yonder CSV exports.
 - Copies each uploaded statement unchanged to `data/uploads/` and records its
   SHA-256 hash in `data/imports.json`.
 - Uses a normalized CSV ledger and JSON rule/budget files instead of a database.

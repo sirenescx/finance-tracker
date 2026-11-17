@@ -22,6 +22,14 @@ KEYWORD_RULES = {
     "booking com": ("income", "Salary"), "revolut interest": ("income", "Other"),
 }
 
+YONDER_CATEGORY_MAP = {
+    "bills": "Bills", "subscriptions": "Subscriptions", "entertainment": "Entertainment",
+    "eating out": "Food & Drink", "food & drink": "Food & Drink", "groceries": "Groceries",
+    "health & wellbeing": "Health & Wellbeing", "health & wellness": "Health & Wellbeing",
+    "other": "Other", "shopping": "Shopping", "transport": "Transport", "travel": "Travel",
+    "rent": "Rent", "gifts": "Gifts", "beauty": "Beauty", "taxes": "Taxes",
+}
+
 
 def classify(parsed: ParsedTransaction, store: DataStore) -> tuple[str, str, str, bool]:
     merchant_name = normalise_text(parsed.description)
@@ -45,6 +53,12 @@ def classify(parsed: ParsedTransaction, store: DataStore) -> tuple[str, str, str
             matched = bool(normalised_merchant) and merchant_name == normalised_merchant
         if matched:
             return kind, match["category"], "merchant_rule", False
+    if parsed.source == "Yonder" and kind == "expense":
+        category_match = re.search(r"(?:^|\|)\s*Yonder category:\s*([^|]+)", parsed.original_description)
+        bank_category = parsed.bank_category or (category_match.group(1).strip() if category_match else "")
+        category = YONDER_CATEGORY_MAP.get(normalise_text(bank_category))
+        if category:
+            return kind, category, "yonder_category", False
     for keyword, (rule_kind, category) in KEYWORD_RULES.items():
         if keyword in haystack and rule_kind == kind:
             return kind, category, "keyword_rule", False
@@ -291,7 +305,7 @@ def mark_transfer(store: DataStore, transaction_id: str, save_rule: bool) -> Non
 def dashboard(store: DataStore, year: int) -> dict[str, object]:
     expense = {category: [Decimal("0") for _ in range(12)] for category in EXPENSE_CATEGORIES}
     income = {category: [Decimal("0") for _ in range(12)] for category in INCOME_CATEGORIES}
-    bank_spend = {bank: [Decimal("0") for _ in range(12)] for bank in ("ING", "Revolut")}
+    bank_spend = {bank: [Decimal("0") for _ in range(12)] for bank in ("ING", "Revolut", "Yonder")}
     pending = 0
     for transaction in store.transactions():
         if transaction.kind in {"transfer", "exchange"} or not transaction.posted_date.startswith(str(year)):

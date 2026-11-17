@@ -2,8 +2,8 @@
 
 ## Project purpose
 
-Finance Tracker is a personal, local-only finance app. It imports ING and
-Revolut CSV statements into a file-backed ledger, classifies transactions with
+Finance Tracker is a personal, local-only finance app. It imports ING,
+Revolut, and Yonder CSV statements into a file-backed ledger, classifies transactions with
 deterministic rules, and presents reports in a small FastAPI web app. Preserve
 the current scope: no database, login, cloud sync, paid service, or external AI
 classification unless the user explicitly asks for a change.
